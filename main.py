@@ -5,8 +5,31 @@ import datetime
 from PyQt5.QtGui import QIcon, QMovie, QCursor, QPixmap
 from PyQt5.QtWidgets import (QWidget, QApplication, QSystemTrayIcon, 
                              QMenu, QAction, QLabel, QDesktopWidget,
-                             QProgressBar, QVBoxLayout, QHBoxLayout)
-from PyQt5.QtCore import Qt, QSize, QTimer
+                             QProgressBar, QVBoxLayout, QHBoxLayout,
+                             QDialog)
+from PyQt5.QtCore import Qt, QSize, QTimer, QPoint
+
+class ClockDialog(QDialog):
+    def __init__(self, message, parent=None):
+        super(ClockDialog, self).__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Tool | Qt.WindowStaysOnTopHint | Qt.NoDropShadowWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        layout = QVBoxLayout()
+        self.message_label = QLabel(message)
+        self.message_label.setStyleSheet("""
+            background-color: rgba(255, 255, 255, 225);
+            border: 2px solid #FF69B4;
+            border-radius: 10px;
+            padding: 10px;
+            color: #333;
+            font-size: 14px;
+        """)
+        layout.addWidget(self.message_label)
+        self.setLayout(layout)
+        self.timer = QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.close)
+        self.timer.start(9500)
 
 class DesktopPet(QWidget):
     def __init__(self, parent=None, **kwargs):
@@ -31,6 +54,10 @@ class DesktopPet(QWidget):
         self.resurrect_timer.setSingleShot(True)
         self.resurrect_timer.timeout.connect(self.resurrectPet)
         self.is_dead = False
+        self.hour_timer = QTimer(self)
+        self.hour_timer.timeout.connect(self.hourAlert)
+        self.hour_timer.start(1000)
+        self.last_hour = -1
         self.initPetImage()
         
     def init(self):
@@ -59,6 +86,7 @@ class DesktopPet(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
+        self.normal_form = random.random()
         
         self.stats_visible = True
         self.happiness_layout = QHBoxLayout()
@@ -165,7 +193,7 @@ class DesktopPet(QWidget):
         self.working_timer.stop()
         self.changeGif("GIF/exercise.gif")
         self.action_timer.start(10 * 60 * 1000)
-        self.updateStatus(5, -10, 10 * 60 * 1000)
+        self.updateStatus(5, -15, 10 * 60 * 1000)
         
     def charge(self):
         if self.is_dead:
@@ -173,7 +201,7 @@ class DesktopPet(QWidget):
         self.resetBoringTimer()
         self.working_timer.stop()
         self.changeGif("GIF/charge.gif")
-        self.action_timer.start(45 * 60 * 1000)
+        self.action_timer.start(60 * 60 * 1000)
         self.updateStatus(30, 30, 30 * 60 * 1000)
     
     def cake(self):
@@ -181,9 +209,13 @@ class DesktopPet(QWidget):
             return
         self.resetBoringTimer()
         self.working_timer.stop()
-        self.changeGif("GIF/cake.gif")
-        self.action_timer.start(5 * 60 * 1000)
-        self.updateStatus(10, 5, 5 * 60 * 1000)
+        if self.energy_bar.value() >= 80:
+            self.changeGif("GIF/full.gif")
+            self.action_timer.start(5 * 1000)
+        else:
+            self.changeGif("GIF/cake.gif")
+            self.action_timer.start(5 * 60 * 1000)
+            self.updateStatus(10, 5, 5 * 60 * 1000)
         
     def baji(self):
         if self.is_dead:
@@ -192,7 +224,7 @@ class DesktopPet(QWidget):
         self.working_timer.stop()
         self.changeGif("GIF/baji.gif")
         self.action_timer.start(5 * 60 * 1000)
-        self.updateStatus(10, 10, 5 * 60 * 1000)
+        self.updateStatus(10, 0, 5 * 60 * 1000)
         
     def appear(self):
         if self.is_dead:
@@ -237,13 +269,18 @@ class DesktopPet(QWidget):
                 self.working_timer.stop()
             self.working_timer.start(2 * 10 * 1000)
             return self.changeGif("GIF/crying.gif")
+        elif energy >= 20 and energy < 40:
+            return self.changeGif("GIF/hungry.gif")
         
         if self.is_working_time:
             self.working_timer.start(3 * 60 * 1000)
             return self.changeGif("GIF/working2.gif")
         else:
             self.working_timer.stop()
-            return self.changeGif("GIF/normal.gif")
+            if self.normal_form < 0.5:
+                return self.changeGif("GIF/normal.gif")
+            else:
+                return self.changeGif("GIF/normal2.gif")
         
     def updateWorking(self):
         self.updateHappiness(-1)
@@ -299,18 +336,36 @@ class DesktopPet(QWidget):
         self.hidestats.setEnabled(False)
         self.hideup.setEnabled(False)
         self.hide()
-        self.resurrect_timer.start(5000)
+        self.resurrect_timer.start(30 * 60 * 1000)
         
     def resurrectPet(self):
         self.is_dead = False
-        self.happiness_bar.setValue(50)
-        self.energy_bar.setValue(50)
+        self.happiness_bar.setValue(30)
+        self.energy_bar.setValue(30)
         self.showing.setEnabled(True)
         self.hidestats.setEnabled(True)
         self.hideup.setEnabled(True)
         self.showup()
         self.resetBoringTimer()
         self.checkInitialGif()
+        
+    def hourAlert(self):
+        if self.is_dead or self.action_timer.isActive():
+            return
+        current_time = datetime.datetime.now()
+        current_hour = current_time.hour
+        current_minute = current_time.minute
+        if current_minute == 0 and current_hour != self.last_hour:
+            self.last_hour = current_hour
+            self.working_timer.stop()
+            self.changeGif("GIF/clock.gif")
+            self.clock_dialog = ClockDialog(
+                message=f"现在是北京时间 {current_hour} 点整！",
+                parent=self
+            )
+            self.clock_dialog.move(self.updateDialogPosition())
+            self.clock_dialog.show()
+            self.action_timer.start(9500)
             
     def randomPosition(self):
         screen_geometry = QDesktopWidget().screenGeometry()
@@ -338,6 +393,8 @@ class DesktopPet(QWidget):
     def mouseMoveEvent(self, event):
         if Qt.LeftButton and self.is_follow_mouse:
             self.move(event.globalPos() - self.mouse_drag_pos)
+            if hasattr(self, 'clock_dialog') and self.clock_dialog.isVisible():
+                self.clock_dialog.move(self.updateDialogPosition())
         event.accept()
  
     def mouseReleaseEvent(self, event):
@@ -365,6 +422,24 @@ class DesktopPet(QWidget):
         self.happiness_bar.setVisible(self.stats_visible)
         self.energy_label.setVisible(self.stats_visible)
         self.energy_bar.setVisible(self.stats_visible)
+        
+    def updateDialogPosition(self):
+        screen = QDesktopWidget().screenGeometry()
+        screen_width = screen.width()
+        screen_height = screen.height()
+        pet_pos = self.pos()
+        pet_width = self.width()
+        pet_height = self.height()
+        if hasattr(self, 'clock_dialog'):
+            dialog_width = self.clock_dialog.width()
+            dialog_height = self.clock_dialog.height()
+        x = pet_pos.x() + pet_width // 2
+        y = pet_pos.y()
+        if x + dialog_width > screen_width:
+            x = pet_pos.x() - dialog_width // 2
+        if y < 0:
+            y = 0
+        return QPoint(x, y)
         
     def quit(self):
         self.close()
