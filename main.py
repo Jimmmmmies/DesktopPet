@@ -82,16 +82,6 @@ class ChatDialog(QDialog):
         self.send_button.clicked.connect(self.sendMessage)
         self.input_field.returnPressed.connect(self.sendMessage)
 
-        # 小白的随机回复
-        self.bot_replies = [
-            "汪汪！你说的我都懂！",
-            "小白觉得你说得很对~",
-            "真有趣！",
-            "我在听呢~",
-            "你能陪我真好！",
-            "汪！我们去玩吧！"
-        ]
-
         # --- 这里是新增的欢迎语 ---
         welcome_message = "汪汪~ 我是小白，很高兴见到你！"
         self.chat_history.append(f"<b><span style='color:#FF69B4'>小白：</span></b> {welcome_message}")
