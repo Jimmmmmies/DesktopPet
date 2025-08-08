@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QSystemTrayIcon,
 from PyQt5.QtCore import Qt, QSize, QTimer, QPoint
 from PyQt5.QtWidgets import QTextEdit, QLineEdit, QPushButton
 
-from ollama import OllamaChat
+from chat_with_llm import OllamaChat
 
 
 # ... existing code ...
