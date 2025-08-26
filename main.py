@@ -164,6 +164,7 @@ class DesktopPet(QWidget):
         menu.addAction(u"充电", self.charge)
         menu.addAction(u"投喂小白", self.cake)
         menu.addAction(u"吧唧", self.baji)
+        menu.addAction(u"鸡毛丸子", self.baji2)
         menu.addAction(u"随机出现", self.appear)
         menu.addAction(u"遛小鸡毛", self.walkDog)
         right_pos = self.mapToGlobal(self.rect().topRight())
@@ -244,6 +245,15 @@ class DesktopPet(QWidget):
         self.action_timer.start(10 * 60 * 1000)
         self.updateStatus(15, -10, 10 * 60 * 1000)
         
+    def baji2(self):
+        if self.is_dead:
+            return
+        self.resetBoringTimer()
+        self.working_timer.stop()
+        self.changeGif("GIF/baji2.gif")
+        self.action_timer.start(5 * 60 * 1000)
+        self.updateStatus(15, -10, 5 * 60 * 1000)
+
     def checkInitialGif(self):
         current_time = datetime.datetime.now()
         current_hour = current_time.hour
@@ -360,7 +370,7 @@ class DesktopPet(QWidget):
             self.working_timer.stop()
             self.changeGif("GIF/clock.gif")
             self.clock_dialog = ClockDialog(
-                message=f"现在是北京时间 {current_hour} 点整！",
+                message=f"现在是北京时间 {current_hour} 点整噢！",
                 parent=self
             )
             self.clock_dialog.move(self.updateDialogPosition())
