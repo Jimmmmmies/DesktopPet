@@ -1,4 +1,4 @@
-# 桌面宠物(DesktopPet)
+# 线条小狗桌宠(Maltese_DesktopPet)
 
 [English](README.en.md) | 简体中文
 
